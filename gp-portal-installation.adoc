@@ -168,7 +168,7 @@ spec:
   - selector:
       labels:
         istio: ingressgateway
-      cluster: ${CLUSTER_NAME}
+      cluster: gg-demo-single
 EOF
 ----
 
