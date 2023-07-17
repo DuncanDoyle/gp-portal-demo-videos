@@ -1,0 +1,95 @@
+# Gloo Platform Portal - API Deployment
+
+## Instructions
+
+All these instructions are available at: https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc
+
+## Prerequisites
+ 
+- Kubernetes cluster (kind, minikube, EKS, OpenShift, etc.)
+- Gloo Platform Portal installation (see https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc)
+- kubectl
+
+## Check thr Environment
+[source, shell]
+----
+meshctl check
+----
+
+[source, shell]
+----
+kubectl -n gloo-mesh get all
+----
+
+[source, shell]
+----
+kubectl -n gloo-mesh-addons get portal developer-portal -o yaml
+----
+
+## Deploy a micro-service
+
+[source, shell]
+----
+kubectl create ns tracks
+----
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: tracks-rest-api
+  name: tracks-rest-api
+  namespace: tracks
+spec:
+  selector:
+    matchLabels:
+      app: tracks-rest-api
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: tracks-rest-api
+    spec:
+      containers:
+      - image: kcbabo/tracks-rest-api:latest
+        name: tracks-rest-api
+        ports:
+        - containerPort: 5000
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    gloo.solo.io/scrape-openapi-source: /swagger.json
+    gloo.solo.io/scrape-openapi-retry-delay: "5s"
+    gloo.solo.io/scrape-openapi-pull-attempts: "3"
+    gloo.solo.io/scrape-openapi-use-backoff: "true"
+  name: tracks-rest-api
+  namespace: tracks
+  labels:
+    app: tracks-rest-api
+spec:
+  ports:
+  - port: 5000
+    protocol: TCP
+  selector:
+    app: tracks-rest-api
+EOF
+----
+
+## Check the generated APIDoc
+
+[source, shell]
+----
+kubectl -n tracks get apidoc
+----
+
+[soure, shell]
+----
+kubectl -n tracks get apidoc 
+----
+
