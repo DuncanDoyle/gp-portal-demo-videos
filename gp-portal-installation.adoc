@@ -174,6 +174,7 @@ EOF
 
 [source, shell]
 ----
+kubectl apply -f - <<EOF
 apiVersion: networking.gloo.solo.io/v2
 kind: RouteTable
 metadata:
@@ -289,6 +290,7 @@ spec:
         - uri:
             prefix: /v1/openapi
           method: OPTIONS
+EOF
 ----
 
 ## Config hosts file
