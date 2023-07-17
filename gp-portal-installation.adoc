@@ -1,0 +1,298 @@
+# Gloo Platform Portal Installation with Helm
+
+## Instructions
+
+All these instructions are available at: https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-installation.adoc
+
+## Prerequisites
+ 
+- Kubernetes cluster (kind, minikube, EKS, OpenShift, etc.)
+- Helm
+- Gloo Gateway License Key (https://www.solo.io/free-trial/)
+- kubectl
+- meshctl (https://docs.solo.io/gloo-gateway/main/setup/prepare/meshctl_cli_install/)
+
+## Set environment variables
+[source, shell]
+----
+export GLOO_VERSION=2.4.0-beta2
+export GLOO_GATEWAY_LICENSE_KEY={your-gloo-gateway-license-key}
+export CLUSTER_NAME=gg-demo-single
+----
+
+## Add solo.io Gloo Helm repositories to your helm installation
+[source, shell]
+----
+helm repo add gloo-platform https://storage.googleapis.com/gloo-platform/helm-charts
+----
+
+## Install Gloo Custom Resource Definitions
+[source, shell]
+----
+helm upgrade --install gloo-platform-crds gloo-platform/gloo-platform-crds \
+   --namespace=gloo-mesh \
+   --create-namespace \
+   --version $GLOO_VERSION
+----
+
+## Configure Helm values file
+[source, shell]
+----
+cat <<EOF > gloo-gateway-single-values.yaml
+common:
+  cluster: cluster-1
+glooAgent:
+  enabled: true
+  relay:
+    serverAddress: gloo-mesh-mgmt-server.gloo-mesh:9900
+glooMgmtServer:
+  serviceType: ClusterIP
+  registerCluster: true
+  enabled: true
+  createGlobalWorkspace: true
+glooUi:
+  enabled: true
+istioInstallations:
+  enabled: true
+telemetryCollector:
+  enabled: true
+  config:
+    exporters:
+      otlp:
+        endpoint: gloo-telemetry-gateway.gloo-mesh:4317
+prometheus:
+  enabled: true
+redis:
+  deployment:
+    enabled: true
+telemetryGateway:
+  enabled: true
+  service:
+    type: ClusterIP
+rateLimiter:
+  enabled: true
+  rateLimiter:
+    watchNamespace: gloo-mesh-addons
+extAuthService:
+  enabled: true
+  extAuth:
+    apiKeyStorage:
+      name: redis
+      enabled: true
+      config:
+        db: 0
+        host: redis.gloo-mesh-addons:6379
+      secretKey: xyz987
+glooPortalServer:
+  enabled: true
+  apiKeyStorage:
+    configPath: /etc/redis-client-config/config.yaml
+    secretKey: xyz987
+    redis:
+      enabled: true
+      address: redis.gloo-mesh-addons:6379
+      auth:
+        enabled: false
+EOF
+----
+
+## Install Gloo Platform Portal
+
+[source, shell]
+----
+helm upgrade --install gloo-platform gloo-platform/gloo-platform \
+   --namespace gloo-mesh \
+   --version $GLOO_VERSION \
+   --values $GLOO_GATEWAY_HELM_VALUES_FILE \
+   --set common.cluster=$CLUSTER_NAME \
+   --set licensing.glooGatewayLicenseKey=$GLOO_GATEWAY_LICENSE_KEY
+----
+
+
+## Check the platform installation
+
+[source, shell]
+----
+meshctl check
+----
+
+
+## Install Gloo Platform Portal
+
+[source, shell]
+----
+cat <<EOF | kubectl apply -f -
+apiVersion: apimanagement.gloo.solo.io/v2
+kind: Portal
+metadata:
+  name: developer-portal
+  namespace: gloo-mesh-addons
+spec:
+  visibility:
+    public: true
+    privateAPILabels:
+      portal-visibility: private
+  domains:
+    - developer.example.com
+  portalBackendSelectors:
+    - selector:
+        labels:
+          app: gloo-mesh-portal-server
+EOF
+----
+
+## Deploy VirtualGateway and RouteTable
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: networking.gloo.solo.io/v2
+kind: VirtualGateway
+metadata:
+  name: istio-ingressgateway
+  namespace: ${GATEWAY_NAMESPACE}
+spec:
+  listeners:
+    - http: {}
+      port:
+        number: 80
+      allowedRouteTables:
+        - host: developer.example.com
+        - host: api.example.com
+  workloads:
+  - selector:
+      labels:
+        istio: ingressgateway
+      cluster: ${CLUSTER_NAME}
+EOF
+----
+
+[source, shell]
+----
+apiVersion: networking.gloo.solo.io/v2
+kind: RouteTable
+metadata:
+  name: dev-portal-rt
+  namespace: gloo-mesh-gateways
+spec:
+  hosts:
+    - "developer.example.com" # need to update this to developer.example.com
+  virtualGateways:
+    - name: istio-ingressgateway
+      namespace: gloo-mesh-gateways
+  defaultDestination:
+    port:
+      number: 8080
+    ref:
+      name: gloo-mesh-portal-server
+      namespace: gloo-mesh
+      cluster: gg-demo-single
+  http:
+    #
+    # Portal server routes behind authentication.
+    #
+    - forwardTo: {}
+      name: authn
+      labels:
+        oauth: "true" # apply ext auth policy
+        route: portal-api
+      matchers:
+        # /v1/me
+        - uri:
+            prefix: /v1/me
+          method: OPTIONS
+        - uri:
+            prefix: /v1/me
+          method: GET
+          headers:
+            - name: Authorization
+              value: "Bearer.*"
+              regex: true
+        
+        # /v1/apis
+        - uri:
+            prefix: /v1/apis
+          method: GET
+          headers:
+            - name: Authorization
+              value: "Bearer.*"
+              regex: true
+        #
+        # /v1/usage-plans
+        - uri:
+            prefix: /v1/usage-plans
+          method: GET
+          headers:
+            - name: Authorization
+              value: "Bearer.*"
+              regex: true
+        #
+        # /v1/api-keys
+        - uri:
+            prefix: /v1/api-keys
+          method: GET
+          headers:
+            - name: Authorization
+              value: "Bearer.*"
+              regex: true
+        - uri:
+            prefix: /v1/api-keys
+          method: POST
+          headers:
+            - name: Authorization
+              value: "Bearer.*"
+              regex: true
+        - uri:
+            prefix: /v1/api-keys
+          method: DELETE
+          headers:
+            - name: Authorization
+              value: "Bearer.*"
+              regex: true
+    #
+    # Public portal server routes.
+    #
+    - forwardTo: {}
+      name: no-auth
+      labels:
+        route: portal-api
+      matchers:
+        - uri:
+            prefix: /v1/apis
+          method: GET
+        - uri:
+            prefix: /v1/usage-plans
+          method: GET
+        - uri:
+            prefix: /v1/api-keys
+          method: GET
+        - uri:
+            prefix: /v1/openapi
+          method: GET
+        #
+        # Allow all these options requests
+        #
+        - uri:
+            prefix: /v1/api-keys
+          method: OPTIONS
+        - uri:
+            prefix: /v1/usage-plans
+          method: OPTIONS
+        - uri:
+            prefix: /v1/apis
+          method: OPTIONS
+        - uri:
+            prefix: /v1/openapi
+          method: OPTIONS
+----
+
+## Check the Portal installation
+
+[source, shell]
+----
+curl -v http://developer.example.com/v1/apis
+----
+
+## Gloo Platform Portal Demo
+
+A full demo of Gloo Platform Portal can be found here: https://github.com/kcbabo/gg-portal-demo
