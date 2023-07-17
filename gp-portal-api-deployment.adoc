@@ -9,6 +9,7 @@ All these instructions are available at: https://www.github.com/DuncanDoyle/gp-p
 - Kubernetes cluster (kind, minikube, EKS, OpenShift, etc.)
 - Gloo Platform Portal installation (see https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc)
 - kubectl
+- jq (optional)
 
 ## Check thr Environment
 [source, shell]
@@ -211,3 +212,39 @@ EOF
 kubectl -n gloo-mesh-addons get apidoc
 ----
 
+[source, shell]
+----
+kubectl -n gloo-mesh-addons get rt tracks-rt-1.0.0-stitched-openapi-gg-demo-single-gloo-mesh-gateways-gg-demo-single
+----
+
+## Inspect the PortalConfig
+
+[source, shell]
+----
+kubectl get portalconfig -A
+----
+
+[source, shell]
+----
+kubectl -n gloo-mesh get portalconfig developer-portal-gloo-mesh-gg-demo-single -o yaml
+----
+
+## Fetch Tracks API Product from PortalServer RESTful API
+
+[source, shell]
+----
+curl http://developer.example.com/v1/apis
+----
+
+[source, shell]
+----
+curl http://developer.example.com/v1/apis/tracks-rt-1.0.0-gloo-mesh-gateways-gg-demo-single/schema
+----
+
+
+## Call the Tracks API
+
+[source, shell]
+----
+curl http://api.example.com/trackapi/tracks
+----
