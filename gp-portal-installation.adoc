@@ -103,7 +103,7 @@ EOF
 helm upgrade --install gloo-platform gloo-platform/gloo-platform \
    --namespace gloo-mesh \
    --version $GLOO_VERSION \
-   --values $GLOO_GATEWAY_HELM_VALUES_FILE \
+   --values gloo-gateway-single-values.yaml \
    --set common.cluster=$CLUSTER_NAME \
    --set licensing.glooGatewayLicenseKey=$GLOO_PLATFORM_LICENSE_KEY
 ----
