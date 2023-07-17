@@ -88,8 +88,94 @@ EOF
 kubectl -n tracks get apidoc
 ----
 
-[soure, shell]
+[source, shell]
 ----
-kubectl -n tracks get apidoc 
+kubectl -n tracks get apidoc tracks-rest-api-service -o yaml
+----
+
+
+## Check the hosts on the VirtualGateway
+
+[source, shell]
+----
+kubectl -n gloo-mesh-gateways get virtualgateway istio-ingressgateway -o yaml
+----
+
+## Deploy the api.example.com RouteTable
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: networking.gloo.solo.io/v2
+kind: RouteTable
+metadata:
+  name: api-example-com-rt
+  namespace: gloo-mesh-gateways
+spec:
+  hosts:
+  - api.example.com
+  virtualGateways:
+  - name: istio-ingressgateway
+    namespace: gloo-mesh-gateways
+  http:
+  - matchers:
+    - uri:
+        prefix: /trackapi
+    delegate:
+      routeTables:
+        - labels:
+            api: tracks
+EOF
+----
+
+
+## Deploy the Tracks API Product RouteTable
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: networking.gloo.solo.io/v2
+kind: RouteTable
+metadata:
+  name: tracks-rt-1.0.0
+  namespace: gloo-mesh-gateways
+  labels:
+     portal: dev-portal
+     api: tracks
+     # uncomment if you want to hide this API from the portal
+    #  portal-visibility: private
+spec:
+  portalMetadata:
+    apiProductId: Catstronauts
+    apiVersion: 1.0.0
+    title: Catstronauts REST API
+    description: REST API for Catstronauts to retrieve data for tracks, authors and modules.
+    contact: catstronauts-support@solo.io
+  http:
+  - name: tracks-api
+    labels:
+      cors-policy: api
+      usagePlans: dev-portal
+      # transformation: test-transform
+    matchers:
+    - uri:
+        prefix: /
+    forwardTo:
+      pathRewrite: /
+      destinations:
+      - ref:
+          name: tracks-rest-api
+          namespace: tracks
+        port:
+          number: 5000
+EOF
+----
+
+
+## Inspect Tracks API Product (stitched) APIDoc
+
+[source, shell]
+----
+kubectl -n gloo-mesh-addons get apidoc
 ----
 
