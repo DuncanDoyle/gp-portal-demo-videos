@@ -16,8 +16,8 @@ All these instructions are available at: https://www.github.com/DuncanDoyle/gp-p
 [source, shell]
 ----
 export GLOO_VERSION=2.4.0-beta2
-export GLOO_GATEWAY_LICENSE_KEY={your-gloo-gateway-license-key}
 export CLUSTER_NAME=gg-demo-single
+export GLOO_GATEWAY_LICENSE_KEY={your-gloo-gateway-license-key}
 ----
 
 ## Add solo.io Gloo Helm repositories to your helm installation
@@ -285,6 +285,10 @@ spec:
             prefix: /v1/openapi
           method: OPTIONS
 ----
+
+## Config hosts file
+
+In our example, we use the domain name `developer.example.com` to access our Portal. This domain name should be mapped to the IP-Address of the Ingress Gateway of your Gloo Platform installation. In this example, which I run on a local minikube installation, the domain name is ampped to `127.0.0.1`
 
 ## Check the Portal installation
 
