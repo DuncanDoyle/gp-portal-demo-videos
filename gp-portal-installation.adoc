@@ -15,8 +15,8 @@ All these instructions are available at: https://www.github.com/DuncanDoyle/gp-p
 ## Set environment variables
 [source, shell]
 ----
-export GLOO_VERSION=2.4.0-beta2
-export CLUSTER_NAME=gg-demo-single
+export GLOO_VERSION=2.4.0-beta2 \
+export CLUSTER_NAME=gg-demo-single \
 export GLOO_PLATFORM_LICENSE_KEY={your-gloo-gateway-license-key}
 ----
 
