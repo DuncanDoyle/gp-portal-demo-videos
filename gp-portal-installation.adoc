@@ -155,7 +155,7 @@ apiVersion: networking.gloo.solo.io/v2
 kind: VirtualGateway
 metadata:
   name: istio-ingressgateway
-  namespace: ${GATEWAY_NAMESPACE}
+  namespace: gloo-mesh-gateways
 spec:
   listeners:
     - http: {}
