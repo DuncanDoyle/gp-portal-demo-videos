@@ -128,6 +128,38 @@ spec:
 EOF
 ----
 
+## Configure the Developer Portal
+
+[source, shell]
+----
+kubectl -n gloo-mesh-addons get portal developer-portal -o yaml
+----
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: apimanagement.gloo.solo.io/v2
+kind: Portal
+metadata:
+  name: developer-portal
+  namespace: gloo-mesh-addons
+spec:
+  visibility:
+    public: true
+    privateAPILabels:
+      portal-visibility: private
+  domains:
+    - developer.example.com
+  portalBackendSelectors:
+    - selector:
+        labels:
+          app: gloo-mesh-portal-server
+  apis:
+    - labels:
+        portal: dev-portal
+EOF
+----
+
 
 ## Deploy the Tracks API Product RouteTable
 
