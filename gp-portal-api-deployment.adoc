@@ -11,7 +11,7 @@ All these instructions are available at: https://www.github.com/DuncanDoyle/gp-p
 - kubectl
 - jq (optional)
 
-## Check thr Environment
+## Check the Environment
 [source, shell]
 ----
 meshctl check
