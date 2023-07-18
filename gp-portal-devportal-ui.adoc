@@ -1,0 +1,98 @@
+# Gloo Platform Portal - DevPortal UI
+
+*DRAFT!!!*
+
+*WORK IN PROGRESS!!!*
+
+
+
+## Instructions
+
+All these instructions are available at: https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc
+
+## Prerequisites
+ 
+- Kubernetes cluster (kind, minikube, EKS, OpenShift, etc.)
+- Gloo Platform Portal installation (see https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc)
+- kubectl
+- nvm 16
+- yarn 1.22.x
+
+## Check the Environment
+[source, shell]
+----
+meshctl check
+----
+
+[source, shell]
+----
+curl http://developer.example.com/v1/apis
+----
+
+## Create DevPortal Frontend
+
+[source, shell]
+----
+nvm use 16
+----
+
+[source, shell]
+----
+npx tmplr solo-io/dev-portal-starter#main
+----
+
+## Configure the DevPortal UI
+
+[source, shell]
+----
+echo <<EOF 'VITE_PORTAL_SERVER_URL="http://developer.example.com/v1"
+VITE_TOKEN_ENDPOINT="http://keycloak.example.com/realms/master/protocol/openid-connect/token"
+VITE_AUTH_ENDPOINT="http://keycloak.example.com/realms/master/protocol/openid-connect/auth"
+VITE_LOGOUT_ENDPOINT="http://keycloak.example.com/realms/master/protocol/openid-connect/logout"
+VITE_CLIENT_ID="portal-client"' > .env.local
+EOF
+----
+
+## Run the portal
+
+[source, shell]
+----
+make install-tools
+----
+
+[source, shell]
+----
+make run-ui
+----
+
+## Apply CORS Policy
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: security.policy.gloo.solo.io/v2
+kind: CORSPolicy
+metadata:
+  name: dev-portal-cors
+  namespace: gloo-mesh-gateways
+spec:
+  applyToRoutes:
+  - route:
+      labels:
+        route: portal-api
+  config:
+    allowCredentials: true
+    allowHeaders:
+    - Authorization
+    - Content-Type
+    allowMethods:
+    - OPTIONS
+    - GET
+    - POST
+    - PUT
+    - PATCH
+    - DELETE
+    allowOrigins:
+    - exact: http://localhost:4000
+EOF
+----
