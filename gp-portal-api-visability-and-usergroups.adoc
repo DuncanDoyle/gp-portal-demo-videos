@@ -1,0 +1,133 @@
+# Gloo Platform Portal - API Visability & UserGroups
+
+## Instructions
+
+All these instructions are available at: https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-visability-and-usergroups.adoc
+
+## Prerequisites
+ 
+- Kubernetes cluster (kind, minikube, EKS, OpenShift, etc.)
+- Gloo Platform Portal installation (see https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc)
+- Tracks API deployed (see https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc)
+- DevPortal UI Frontend deployed (see https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-devportal-ui.adoc)
+- kubectl
+- jq (optional)
+
+## Check the Environment
+[source, shell]
+----
+meshctl check
+----
+
+[source, shell]
+----
+kubectl get apidoc -A
+----
+
+[source, shell]
+----
+curl http://developer.example.com/v1/apis
+----
+
+## Check Developer Portal configuration
+
+[source, shell]
+----
+kubectl create ns tracks
+----
+
+## Set the Tracks API visability to "private"
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: networking.gloo.solo.io/v2
+kind: RouteTable
+metadata:
+  name: tracks-rt-1.0.0
+  namespace: gloo-mesh-gateways
+  labels:
+     portal: dev-portal
+     api: tracks
+     # uncomment if you want to hide this API from the portal
+     portal-visibility: private
+spec:
+  portalMetadata:
+    apiProductId: Catstronauts
+    apiVersion: 1.0.0
+    title: Catstronauts REST API
+    description: REST API for Catstronauts to retrieve data for tracks, authors and modules.
+    contact: catstronauts-support@solo.io
+  http:
+  - name: tracks-api
+    labels:
+      cors-policy: api
+      usagePlans: dev-portal
+      # transformation: test-transform
+    matchers:
+    - uri:
+        prefix: /
+    forwardTo:
+      pathRewrite: /
+      destinations:
+      - ref:
+          name: tracks-rest-api
+          namespace: tracks
+        port:
+          number: 5000
+EOF
+----
+
+[source, shell]
+----
+curl http://developer.example.com/v1/apis
+----
+
+## Login to the Developer Portal using OAuth
+
+## Configure PortalGroup
+
+[source, shell]
+----
+kubectl apply -f - <<EOF
+apiVersion: apimanagement.gloo.solo.io/v2
+kind: PortalGroup
+metadata:
+  name: tracks-group
+  namespace: gloo-mesh-addons
+spec:
+  name: tracks-group
+  description: A group that grants access to the tracks API and allows users in this group to manage API keys for the bronze, silver, and gold usage plans.
+  membership:
+    - claims:
+        - key: group
+          value: users
+  accessLevel:
+    apis:
+    - labels:
+          api: tracks
+    usagePlans:
+    - bronze
+    - silver
+    - gold
+EOF
+----
+
+## Check Tracks API visability
+
+[source, shell]
+----
+export ACCESS_TOKEN={your OAuth access token}
+----
+
+[source, shell]
+----
+curl -H "Authorization: Bearer $ACCESS_TOKEN" http://developer.example.com/v1/apis
+----
+
+## Create API-Key
+
+[source, shell]
+----
+curl -X POST -H "Authorization: Bearer $ACCESS_TOKEN" -d '{ "apiKeyName": "api-key-name-1", "usagePlan": "silver" }' http://developer.example.com/v1/api-keys
+----
