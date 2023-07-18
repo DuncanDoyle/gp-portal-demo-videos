@@ -209,12 +209,12 @@ EOF
 
 [source, shell]
 ----
-kubectl -n gloo-mesh-addons get apidoc
+kubectl -n gloo-mesh get apidoc
 ----
 
 [source, shell]
 ----
-kubectl -n gloo-mesh-addons get rt tracks-rt-1.0.0-stitched-openapi-gg-demo-single-gloo-mesh-gateways-gg-demo-single
+kubectl -n gloo-mesh get apidoc tracks-rt-1.0.0-stitched-openapi-gg-demo-single-gloo-mesh-gateways-gg-demo-single -o yaml
 ----
 
 ## Inspect the PortalConfig
