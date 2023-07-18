@@ -1,5 +1,9 @@
 # Gloo Platform Portal - API Versioning and Life Cycle Management
 
+*DRAFT!!!*
+
+*WORK IN PROGRESS!!!*
+
 ## Instructions
 
 All these instructions are available at: https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-versioning-and-lcm.adoc
