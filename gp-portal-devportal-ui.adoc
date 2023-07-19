@@ -49,7 +49,7 @@ echo <<EOF 'VITE_PORTAL_SERVER_URL="http://developer.example.com/v1"
 VITE_TOKEN_ENDPOINT="http://keycloak.example.com/realms/master/protocol/openid-connect/token"
 VITE_AUTH_ENDPOINT="http://keycloak.example.com/realms/master/protocol/openid-connect/auth"
 VITE_LOGOUT_ENDPOINT="http://keycloak.example.com/realms/master/protocol/openid-connect/logout"
-VITE_CLIENT_ID="portal-client"' > .env.local
+VITE_CLIENT_ID="portal-client"' > ./projects/ui/.env.local
 EOF
 ----
 
