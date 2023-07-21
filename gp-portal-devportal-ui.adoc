@@ -1,11 +1,5 @@
 # Gloo Platform Portal - DevPortal UI
 
-*DRAFT!!!*
-
-*WORK IN PROGRESS!!!*
-
-
-
 ## Instructions
 
 All these instructions are available at: https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-api-deployment.adoc
@@ -29,7 +23,9 @@ meshctl check
 curl http://developer.example.com/v1/apis
 ----
 
-## Create DevPortal Frontend
+## Installation from source
+
+### Create DevPortal Frontend
 
 [source, shell]
 ----
@@ -41,7 +37,7 @@ nvm use 16
 npx tmplr solo-io/dev-portal-starter#main
 ----
 
-## Configure the DevPortal UI
+### Configure the DevPortal UI
 
 [source, shell]
 ----
@@ -53,7 +49,7 @@ VITE_CLIENT_ID="portal-client"' > ./projects/ui/.env.local
 EOF
 ----
 
-## Run the portal
+### Run the portal
 
 [source, shell]
 ----
@@ -63,6 +59,11 @@ make install-tools
 [source, shell]
 ----
 make run-ui
+----
+
+[source, shell]
+----
+open http://localhost:4000
 ----
 
 ## Apply CORS Policy
@@ -95,4 +96,42 @@ spec:
     allowOrigins:
     - exact: http://localhost:4000
 EOF
+----
+
+
+## Installation with Helm
+
+[source, shell]
+----
+helm repo add ddoyle-gloo-demo https://duncandoyle.github.io/gloo-demo-helm-charts
+----
+
+[source, shell]
+----
+helm repo list
+----
+
+[source, shell]
+----
+helm install gp-portal-demo-devportal-ui ddoyle-gloo-demo/gp-portal-demo-devportal-ui --namespace gloo-mesh-addons --version 0.1.1
+----
+
+[source, shell]
+----
+helm list --namespace gloo-mesh-addons
+----
+
+[source, shell]
+----
+kubectl -n gloo-mesh-addons get all
+----
+
+[source, shell]
+----
+kubectl -n gloo-mesh-addons port-forward services/portal-frontend 4000
+----
+
+[source, shell]
+----
+open http://localhost:4000
 ----
