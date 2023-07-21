@@ -2,7 +2,7 @@
 
 ## Instructions
 
-All these instructions are available at: https://www.github.com/DuncanDoyle/gp-portal-demo-videos/gp-portal-installation.adoc
+All these instructions are available at: https://github.com/DuncanDoyle/gp-portal-demo-videos/blob/main/gp-portal-installation.adoc
 
 ## Prerequisites
  
